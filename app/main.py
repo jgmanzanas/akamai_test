@@ -52,7 +52,7 @@ def validate_token(
     session: SessionDep
 ) -> Response:
     try:
-        return 'success'
+        return {'validation_check': 'success'}
     except Exception as e:
         print(e)
-        return 'failure'
+        return {'validation_check': 'failure'}
