@@ -32,21 +32,21 @@ There is DB on the repository that have users stored. Ït could be done for test
 The information stored on the DB is the following one:
 ```
 {
-    "id": "102a6691-1550-43d6-8ddf-886ab468fcf9",
-    "password": "DjinnSilex123",
-    "name": "Hans"
+    "name": "Hans",
+    "id": "cc5f8629-f18d-4898-b517-07a207b3f52d",
+    "password": "DjinnSilex123"
 }
 
 {
-    "id": "383ddcde-21bb-49cb-8406-e06b6fbbad11",
-    "password": "ChozoChosen456",
-    "name": "Samus"
+    "name": "Samus",
+    "id": "803eb051-0a17-4590-90f7-2aaf3de1eb19",
+    "password": "ChozoChosen456"
 }
 
 {
-    "id": "f6abb7b0-d886-4ec2-9649-d0dd6ed92e0b",
-    "password": "FindingGanon789",
-    "name": "Link"
+    "name": "Link",
+    "id": "16740c28-8acd-4ae7-a8da-a2a7221bfbe0",
+    "password": "FindingGanon789"
 }
 ```
 Each of these users is usable when the container is up&running.
