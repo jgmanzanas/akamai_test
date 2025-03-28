@@ -124,3 +124,8 @@ To copy the data inside the file into a file on the container. These type of sec
 I also tried to add the variables on the `vars.env` file using this secure mount. The `vars.env` file only have environment variables for the algorithm of the token encrypt/decrypt and the path of the files where the public, private and vault keys are. It would have been great if I could have done that, but for some reasing even when I tried to mount securetly the environment variables using the Docker documentation, the environment variables on the container where blank.
 
 The DB is also copied into the container, so everytime the container is build and up, is possible to have a pre-populated DB ready to go. The port 80 is exposed to be able to forwarding it to the port of our local.
+
+## Self-Feedback
+About the question "Describe how you would handle token revocation or rotation if this system integrated with a broader identity management solution." I would say, I wouldn't change very much what I have done. Expiration time inside the token is really good even if you have an identity manager solution. 
+
+What could be great is to use the identity manager solution to handle the status of the user on the system, taking out the ability of generate tokens of users that are not "active". Also, rotate/revoke tokens will be much easier. As the identity manager will be the master of the status of the users and the tokens, the API will only need to ask for them to the identity manager. This will left only the handle of the expiration time to the API.
