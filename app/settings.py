@@ -1,7 +1,6 @@
 from sqlmodel import Session, SQLModel, create_engine
 
 
-# TODO: Set as env var
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 

@@ -8,5 +8,16 @@ RUN pip install --upgrade pip setuptools wheel && \
     pip install --upgrade -r /requirements.txt
 
 COPY ./app /app
+COPY database.db /app/database.db
+
+WORKDIR /app
+
+RUN --mount=type=secret,id=PUBLIC_KEY_FILE \
+    cat /run/secrets/PUBLIC_KEY_FILE > /app/publicKey.pem
+RUN --mount=type=secret,id=PRIVATE_KEY_FILE \
+    cat /run/secrets/PRIVATE_KEY_FILE > /app/privateKey.pem
+RUN --mount=type=secret,id=VAULT_KEY_FILE \
+    cat /run/secrets/VAULT_KEY_FILE > /app/vaultKey.txt
+
 EXPOSE 80
-CMD ["fastapi", "run", "app/main.py", "--port", "80"]
+CMD ["fastapi", "run", "main.py", "--port", "80"]

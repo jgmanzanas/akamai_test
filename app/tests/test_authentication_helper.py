@@ -1,6 +1,7 @@
 import uuid
 import pytest
 import jwt
+from unittest.mock import patch
 from jwt.exceptions import ExpiredSignatureError, InvalidSubjectError
 from datetime import datetime, timezone, timedelta
 
@@ -13,6 +14,7 @@ from app.utils import (
     AuthenticationHelper, PasswordHelper, JWT_ALGORITHM
 )
 from app.models import User
+from app.utils import vault
 from app.settings import get_session
 
 
@@ -40,6 +42,12 @@ def user_fixture(session: Session):
     yield user
 
     app.dependency_overrides.clear()
+
+@pytest.fixture(name='user_token')
+def generate_user_token_fixture():
+    user_uuid = str(uuid.uuid4())
+    user_token = AuthenticationHelper.generate_user_token(user_uuid)
+    yield user_token
 
 def test_check_user_authentication(session: Session, user: User):
     user_returned = AuthenticationHelper.check_user_authentication(
@@ -82,7 +90,8 @@ def test_generate_user_token_without_expiration():
     user_token = AuthenticationHelper.generate_user_token(user_uuid)
     
     with open('publicKey.pem', 'rb') as file:
-        public_key = file.read()
+        encrypted_key = file.read()
+        public_key = vault.load_raw(encrypted_key)
     payload = jwt.decode(user_token, public_key, algorithms=[JWT_ALGORITHM])
     assert user_uuid == payload.get("sub")
     assert None == payload.get('exp')
@@ -93,7 +102,8 @@ def test_generate_user_token_with_expiration():
     user_token = AuthenticationHelper.generate_user_token(user_uuid, 30)
     
     with open('publicKey.pem', 'rb') as file:
-        public_key = file.read()
+        encrypted_key = file.read()
+        public_key = vault.load_raw(encrypted_key)
     payload = jwt.decode(user_token, public_key, algorithms=[JWT_ALGORITHM])
     expiration_time = datetime.now(timezone.utc) + timedelta(minutes=30)
     assert user_uuid == payload.get("sub")
@@ -107,7 +117,8 @@ def test_generate_user_token_with_expiration_0():
     user_token = AuthenticationHelper.generate_user_token(user_uuid, 0)
     
     with open('publicKey.pem', 'rb') as file:
-        public_key = file.read()
+        encrypted_key = file.read()
+        public_key = vault.load_raw(encrypted_key)
     try:
         jwt.decode(user_token, public_key, algorithms=[JWT_ALGORITHM])
         assert False
@@ -125,7 +136,8 @@ def test_generate_user_token_invalid_data_type_subject():
         assert False
     
     with open('publicKey.pem', 'rb') as file:
-        public_key = file.read()
+        encrypted_key = file.read()
+        public_key = vault.load_raw(encrypted_key)
     try:
         jwt.decode(user_token, public_key, algorithms=[JWT_ALGORITHM])
         assert False
@@ -141,8 +153,52 @@ def test_generate_user_token_invalid_data_type_expiration():
     except TypeError:
         assert True
 
-def test_validate_user_token():
-    user_uuid = str(uuid.uuid4())
+def test_validate_user_token(user_token):
+    assert AuthenticationHelper.validate_user_token(user_token) == True
+
+#TODO: Test if file is not found
+
+def test_validate_user_token_invalid_data_type_subject():
+    user_uuid = False
     user_token = AuthenticationHelper.generate_user_token(user_uuid)
 
-    assert AuthenticationHelper.validate_user_token(user_token) == True
+    try:
+        AuthenticationHelper.validate_user_token(user_token)
+        assert False
+    except HTTPException as httpe:
+        assert httpe.status_code == status.HTTP_401_UNAUTHORIZED
+        assert httpe.detail == "Could not validate credentials"
+
+
+def test_validate_user_token_none_subject():
+    user_uuid = None
+    user_token = AuthenticationHelper.generate_user_token(user_uuid, 0)
+
+    try:
+        AuthenticationHelper.validate_user_token(user_token)
+        assert False
+    except HTTPException as httpe:
+        assert httpe.status_code == status.HTTP_401_UNAUTHORIZED
+        assert httpe.detail == "Could not validate credentials"
+
+
+def test_validate_user_token_expired_signature(user_token):
+    user_uuid = str(uuid.uuid4())
+    user_token = AuthenticationHelper.generate_user_token(user_uuid, 0)
+    try:
+        AuthenticationHelper.validate_user_token(user_token)
+        assert False
+    except HTTPException as httpe:
+        assert httpe.status_code == status.HTTP_401_UNAUTHORIZED
+        assert httpe.detail == "Could not validate credentials"
+
+
+@patch('app.utils.JWT_ALGORITHM', 'HS256')
+def test_validate_user_token_invalid_algorithm(user_token):
+    try:
+        AuthenticationHelper.validate_user_token(user_token)
+        assert False
+    except HTTPException as httpe:
+        assert httpe.status_code == status.HTTP_401_UNAUTHORIZED
+        assert httpe.detail == "Could not validate credentials"
+
